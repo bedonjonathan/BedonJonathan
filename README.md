@@ -1,6 +1,25 @@
-### Hi there 👋
+# Hola!👋
+# Hello!
 
 💬 Ask me about ...Soccer 🤔
+
+## Module 1
+
+```javascript
+let x = 5 
+let y = 3 
+let sum = x + y 
+console.log(sum)
+```
+
+## Module 2
+CSS: Grid + Flexbox
+Event Listeners 
+DOM Manipulation 
+
+```javascript
+
+```
 
 <!--
 **bedonjonathan/BedonJonathan** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
