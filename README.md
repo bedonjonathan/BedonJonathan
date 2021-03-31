@@ -11,27 +11,18 @@ let y = 3
 let sum = x + y 
 console.log(sum)
 ```
-
+```
 ## Module 2
 CSS: Grid + Flexbox
 Event Listeners 
 DOM Manipulation 
-
-```javascript
-
 ```
 
-<!--
-**bedonjonathan/BedonJonathan** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+## Sky 
 
-Here are some ideas to get you started:
+![Space](https://images.wallpaperscraft.com/image/stars_starry_sky_night_purple_118027_300x168.jpg)
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+
+## Adding Gif 
+![Mar-30-2021 20-05-35](https://user-images.githubusercontent.com/75285297/113071875-ac305200-9193-11eb-8cb1-51042ffccbfc.gif)
+
