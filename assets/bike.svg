@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="120" viewBox="0 0 900 120" role="img" aria-label="A bike riding across the screen">
+  <style>
+    .rider{animation:ride 8s linear infinite}
+    @keyframes ride{from{transform:translateX(-140px)}to{transform:translateX(960px)}}
+    .bob{animation:bob .5s ease-in-out infinite alternate}
+    @keyframes bob{to{transform:translateY(-2px)}}
+    .hill{animation:scroll 16s linear infinite}
+    @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-450px)}}
+  </style>
+  <g class="hill" opacity=".35">
+    <path d="M0 110 Q 112 60 225 100 T 450 100 T 675 100 T 900 100 T 1125 100 T 1350 100 V120 H0Z" fill="#22c55e"/>
+  </g>
+  <line x1="0" y1="112" x2="900" y2="112" stroke="#64748b" stroke-width="3" stroke-dasharray="18 12"/>
+  <g class="rider">
+    <g class="bob">
+      <g fill="none" stroke="#0ea5e9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="translate(30 88)"><circle r="20"/><path d="M0-20V20M-20 0H20M-14-14L14 14M14-14L-14 14" stroke-width="1.5"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur=".6s" repeatCount="indefinite"/></path></g>
+        <g transform="translate(100 88)"><circle r="20"/><path d="M0-20V20M-20 0H20M-14-14L14 14M14-14L-14 14" stroke-width="1.5"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur=".6s" repeatCount="indefinite"/></path></g>
+        <path d="M30 88 L55 88 L45 58 L88 58 L100 88 M55 88 L88 58 M45 58 L42 50 M84 48 L88 58 M80 48 H92" stroke="#f97316"/>
+      </g>
+      <g stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" fill="none">
+        <path d="M44 48 L70 22 L88 48" stroke="#a78bfa"/>
+        <path d="M44 48 L55 88"/>
+      </g>
+      <circle cx="74" cy="12" r="9" fill="#facc15" stroke="#111" stroke-width="2"/>
+      <path d="M64 9 Q74 -4 84 9 Z" fill="#ef4444" stroke="#111" stroke-width="1.5"/>
+    </g>
+  </g>
+</svg>
