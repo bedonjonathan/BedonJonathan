@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jonathan's Arcade</title>
+<meta name="description" content="Penalty shootouts, bike sprints and JavaScript brain teasers.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<style>
+  :root {
+    --bg: #0f0d1f;
+    --panel: #1b1835;
+    --panel-2: #26224a;
+    --text: #f1f0ff;
+    --muted: #a9a5d6;
+    --accent: #8b5cf6;
+    --accent-2: #0ea5e9;
+    --good: #22c55e;
+    --bad: #ef4444;
+    --grass: #15803d;
+    --grass-2: #166534;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #3b0764 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  a { color: var(--accent-2); }
+  header { text-align: center; padding: 48px 16px 8px; }
+  header h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin: 0; }
+  header p { color: var(--muted); margin: 8px 0 0; }
+  .wave { display: inline-block; animation: wave 2.4s ease-in-out infinite; transform-origin: 70% 70%; }
+  @keyframes wave { 0%,60%,100% { transform: rotate(0); } 10%,30% { transform: rotate(16deg); } 20%,40% { transform: rotate(-8deg); } }
+  nav { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 16px; position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(6px); }
+  nav button { font: inherit; border: 1px solid var(--panel-2); background: var(--panel); color: var(--text); padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+  nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); }
+  main { max-width: 820px; margin: 0 auto; padding: 0 16px 64px; }
+  section { display: none; background: var(--panel); border: 1px solid var(--panel-2); border-radius: 18px; padding: 24px; margin-top: 16px; }
+  section.active { display: block; animation: pop .25s ease-out; }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px); } }
+  h2 { margin-top: 0; }
+  .muted { color: var(--muted); }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+  .btn { font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn.secondary { background: var(--panel-2); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .pill { background: var(--panel-2); border-radius: 999px; padding: 4px 12px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Penalty shootout ---------- */
+  .pitch { position: relative; margin-top: 16px; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 10;
+    background: repeating-linear-gradient(90deg, var(--grass) 0 10%, var(--grass-2) 10% 20%); user-select: none; }
+  .goal { position: absolute; left: 12%; right: 12%; top: 8%; height: 52%; border: 6px solid #fff; border-bottom: 0;
+    background: repeating-linear-gradient(45deg, rgba(255,255,255,.16) 0 2px, transparent 2px 14px),
+                repeating-linear-gradient(-45deg, rgba(255,255,255,.16) 0 2px, transparent 2px 14px), rgba(0,0,0,.18);
+    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+  .zone { border: 0; background: transparent; cursor: crosshair; font-size: 0; }
+  .zone:hover, .zone:focus-visible { background: rgba(255,255,255,.18); outline: none; }
+  .pitch.locked .zone { cursor: default; pointer-events: none; }
+  .keeper { position: absolute; left: 50%; top: 22%; width: 13%; height: 38%; transform: translateX(-50%);
+    transition: left .35s ease-out, top .35s ease-out, transform .35s ease-out; font-size: clamp(2rem, 7vw, 4rem);
+    display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
+  .ball { position: absolute; left: 50%; top: 82%; font-size: clamp(1.4rem, 4vw, 2.2rem); transform: translate(-50%, -50%);
+    transition: left .45s cubic-bezier(.2,.7,.3,1), top .45s cubic-bezier(.2,.7,.3,1), font-size .45s; pointer-events: none; }
+  .spot { position: absolute; left: 50%; top: 82%; width: 10px; height: 10px; background: #fff; border-radius: 50%; transform: translate(-50%, -50%); opacity: .8; }
+  .line { position: absolute; left: 0; right: 0; top: 60%; height: 4px; background: rgba(255,255,255,.85); }
+  .banner { position: absolute; inset: auto 0 6% 0; text-align: center; font-weight: 800; font-size: clamp(1.4rem, 5vw, 2.4rem);
+    text-shadow: 0 3px 0 rgba(0,0,0,.4); opacity: 0; transform: scale(.6); transition: .2s; pointer-events: none; }
+  .banner.show { opacity: 1; transform: scale(1); }
+  .shots { display: flex; gap: 6px; }
+  .shots span { width: 18px; height: 18px; border-radius: 50%; background: var(--panel-2); display: inline-block; }
+  .shots .goal-dot { background: var(--good); }
+  .shots .miss-dot { background: var(--bad); }
+
+  /* ---------- Bike sprint ---------- */
+  .track { position: relative; margin-top: 16px; height: 170px; border-radius: 14px; overflow: hidden;
+    background: linear-gradient(#38bdf8, #a5f3fc 55%, #4ade80 55%, #22c55e); }
+  .lane { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,.7); }
+  .finish { position: absolute; right: 6%; top: 55%; bottom: 0; width: 14px;
+    background: repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / 14px 14px; }
+  .rider { position: absolute; font-size: 2.6rem; transform: scaleX(-1); left: 2%; transition: left .05s linear; }
+  .rider.you { top: 70px; }
+  .rider.ghost { top: 110px; opacity: .55; filter: grayscale(.6); }
+  .meter { height: 10px; border-radius: 999px; background: var(--panel-2); overflow: hidden; margin-top: 12px; }
+  .meter > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width .1s; }
+  .pedals { display: none; gap: 12px; margin-top: 12px; }
+  .pedals .btn { flex: 1; padding: 22px; font-size: 1.4rem; touch-action: manipulation; }
+  @media (pointer: coarse) { .pedals { display: flex; } }
+  kbd { background: var(--panel-2); border-radius: 6px; padding: 1px 8px; border-bottom: 2px solid #000; }
+
+  /* ---------- Quiz ---------- */
+  pre { background: #0b0a17; border-radius: 12px; padding: 16px; overflow-x: auto; font-size: 1.05rem; }
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+  .choices button { font: inherit; font-family: ui-monospace, Menlo, Consolas, monospace; padding: 12px; border-radius: 12px;
+    border: 2px solid var(--panel-2); background: var(--panel-2); color: var(--text); cursor: pointer; }
+  .choices button.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 25%, var(--panel-2)); }
+  .choices button.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 25%, var(--panel-2)); }
+  .explain { min-height: 3em; margin-top: 12px; }
+
+  /* ---------- Confetti ---------- */
+  .confetti { position: fixed; top: -20px; width: 10px; height: 14px; z-index: 50; pointer-events: none; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  footer { text-align: center; color: var(--muted); padding: 24px 16px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="wave">👋</span> Jonathan's Arcade</h1>
+  <p>Soccer · Biking · JavaScript. Pick a game and try to beat my scores.</p>
+</header>
+
+<nav role="tablist" aria-label="Games">
+  <button role="tab" data-tab="penalty" aria-selected="true">⚽ Penalty Shootout</button>
+  <button role="tab" data-tab="bike" aria-selected="false">🚴 Bike Sprint</button>
+  <button role="tab" data-tab="quiz" aria-selected="false">🟨 JS Brain Teasers</button>
+</nav>
+
+<main>
+  <!-- ===================== PENALTY ===================== -->
+  <section id="penalty" class="active" role="tabpanel">
+    <h2>⚽ Penalty Shootout</h2>
+    <p class="muted">Five shots. Click a spot in the goal to shoot. Careful: the keeper learns your favorite corner.</p>
+    <div class="row">
+      <div class="shots" id="shots" aria-label="Shot results"></div>
+      <span class="pill" id="pScore">Goals: 0 / 0</span>
+      <span class="pill" id="pBest">Best: –</span>
+    </div>
+    <div class="pitch" id="pitch">
+      <div class="line"></div>
+      <div class="goal" id="goal"></div>
+      <div class="keeper" id="keeper">🧤</div>
+      <div class="spot"></div>
+      <div class="ball" id="ball">⚽</div>
+      <div class="banner" id="banner"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="muted" id="pMsg">Pick your spot!</span>
+      <button class="btn secondary" id="pReset">New shootout</button>
+    </div>
+  </section>
+
+  <!-- ===================== BIKE ===================== -->
+  <section id="bike" role="tabpanel">
+    <h2>🚴 Bike Sprint</h2>
+    <p class="muted">Pedal by pressing <kbd>←</kbd> and <kbd>→</kbd> one after the other (on a phone, tap the two buttons). Same key twice in a row doesn't count. Beat my ghost to the finish!</p>
+    <div class="row">
+      <span class="pill" id="bTime">Time: 0.00s</span>
+      <span class="pill" id="bBest">Best: –</span>
+      <button class="btn" id="bStart">Start race</button>
+    </div>
+    <div class="track" id="track">
+      <div class="lane" style="top:100px"></div>
+      <div class="finish"></div>
+      <div class="rider you" id="you" title="You">🚴</div>
+      <div class="rider ghost" id="ghost" title="Jonathan's ghost">🚴</div>
+    </div>
+    <div class="meter" aria-label="Speed"><div id="speed"></div></div>
+    <div class="pedals">
+      <button class="btn secondary" data-pedal="L">◀ Left</button>
+      <button class="btn secondary" data-pedal="R">Right ▶</button>
+    </div>
+    <p class="muted" id="bMsg">Press start, then pedal like you mean it.</p>
+  </section>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section id="quiz" role="tabpanel">
+    <h2>🟨 JS Brain Teasers</h2>
+    <p class="muted">JavaScript has some weird corners. What does each line print?</p>
+    <div class="row"><span class="pill" id="qProgress"></span><span class="pill" id="qScore">Score: 0</span></div>
+    <pre><code id="qCode"></code></pre>
+    <div class="choices" id="qChoices"></div>
+    <p class="explain" id="qExplain"></p>
+    <div class="row"><span></span><button class="btn" id="qNext" disabled>Next →</button></div>
+  </section>
+</main>
+
+<footer>
+  Made with vanilla JavaScript by <a href="https://github.com/bedonjonathan">@bedonjonathan</a> ·
+  <a href="https://github.com/bedonjonathan/BedonJonathan">view the source</a>
+</footer>
+
+<script>
+// ---------- Helpers ----------
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} },
+};
+
+function confetti(count = 80) {
+  const colors = ["#8b5cf6", "#0ea5e9", "#22c55e", "#facc15", "#ef4444", "#f97316"];
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti";
+    piece.style.left = Math.random() * 100 + "vw";
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDuration = 1.5 + Math.random() * 2 + "s";
+    piece.style.animationDelay = Math.random() * 0.4 + "s";
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 4200);
+  }
+}
+
+// ---------- Tabs ----------
+const tabs = document.querySelectorAll("nav [role=tab]");
+function showTab(name) {
+  tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
+  document.querySelectorAll("main section").forEach((s) => s.classList.toggle("active", s.id === name));
+  if (history.replaceState) history.replaceState(null, "", "#" + name);
+}
+tabs.forEach((t) => t.addEventListener("click", () => showTab(t.dataset.tab)));
+if (["penalty", "bike", "quiz"].includes(location.hash.slice(1))) showTab(location.hash.slice(1));
+
+// ---------- Penalty shootout ----------
+const penalty = (() => {
+  const SHOTS = 5;
+  const zones = ["Top left", "Top middle", "Top right", "Bottom left", "Bottom middle", "Bottom right"];
+  // Ball target (percent of pitch) for each zone
+  const targets = [[24, 18], [50, 18], [76, 18], [24, 46], [50, 46], [76, 46]];
+  const goal = $("goal"), pitch = $("pitch"), ball = $("ball"), keeper = $("keeper"), banner = $("banner");
+  let history = [], results = [];
+
+  zones.forEach((label, i) => {
+    const b = document.createElement("button");
+    b.className = "zone";
+    b.setAttribute("aria-label", "Shoot " + label);
+    b.textContent = label;
+    b.addEventListener("click", () => shoot(i));
+    goal.appendChild(b);
+  });
+
+  function keeperGuess() {
+    // 40% of the time guess randomly, otherwise dive to the zone you've picked most
+    if (history.length === 0 || Math.random() < 0.4) return Math.floor(Math.random() * zones.length);
+    const counts = zones.map((_, i) => history.filter((h) => h === i).length);
+    return counts.indexOf(Math.max(...counts));
+  }
+
+  function shoot(zone) {
+    if (results.length >= SHOTS || pitch.classList.contains("locked")) return;
+    pitch.classList.add("locked");
+    const dive = keeperGuess();
+    history.push(zone);
+
+    const [x, y] = targets[zone];
+    const [kx, ky] = targets[dive];
+    // Top corners are risky: 15% chance to sail over the bar
+    const overBar = zone === 0 || zone === 2 ? Math.random() < 0.15 : false;
+    ball.style.left = x + "%";
+    ball.style.top = (overBar ? 2 : y) + "%";
+    ball.style.fontSize = "1.3rem";
+    keeper.style.left = kx + "%";
+    keeper.style.top = (ky - 12) + "%";
+    keeper.style.transform = `translateX(-50%) rotate(${kx < 50 ? -35 : kx > 50 ? 35 : 0}deg)`;
+
+    const scored = !overBar && dive !== zone;
+    results.push(scored);
+    setTimeout(() => {
+      banner.textContent = overBar ? "Over the bar! 😬" : scored ? "GOOOOAL! 🎉" : "Saved! 🧤";
+      banner.classList.add("show");
+      if (scored) confetti(30);
+      render();
+    }, 450);
+    setTimeout(resetPositions, 1500);
+  }
+
+  function resetPositions() {
+    banner.classList.remove("show");
+    ball.style.left = "50%"; ball.style.top = "82%"; ball.style.fontSize = "";
+    keeper.style.left = "50%"; keeper.style.top = "22%"; keeper.style.transform = "translateX(-50%)";
+    if (results.length < SHOTS) pitch.classList.remove("locked");
+    else finish();
+  }
+
+  function finish() {
+    const goals = results.filter(Boolean).length;
+    const best = store.get("penaltyBest");
+    if (best === null || goals > best) store.set("penaltyBest", goals);
+    const verdicts = ["The keeper is laughing. Try again!", "Tough day at the office.", "Not bad, not great.",
+      "Solid! You'd make the team.", "Clinical finishing! 🔥", "PERFECT! Hat-trick and then some! 🏆"];
+    $("pMsg").textContent = `${goals}/${SHOTS} — ${verdicts[goals]}`;
+    if (goals >= 4) confetti(120);
+    render();
+  }
+
+  function render() {
+    const goals = results.filter(Boolean).length;
+    $("pScore").textContent = `Goals: ${goals} / ${results.length}`;
+    const best = store.get("penaltyBest");
+    $("pBest").textContent = "Best: " + (best === null ? "–" : `${best}/${SHOTS}`);
+    $("shots").innerHTML = Array.from({ length: SHOTS }, (_, i) =>
+      `<span class="${results[i] === undefined ? "" : results[i] ? "goal-dot" : "miss-dot"}"></span>`).join("");
+    if (results.length < SHOTS) $("pMsg").textContent = `Shot ${results.length + 1} of ${SHOTS}. Pick your spot!`;
+  }
+
+  function reset() {
+    history = []; results = [];
+    pitch.classList.remove("locked");
+    render();
+  }
+  $("pReset").addEventListener("click", reset);
+  reset();
+  return { shoot, get results() { return results; } };
+})();
+
+// ---------- Bike sprint ----------
+const bike = (() => {
+  const GHOST_TIME = 9.5; // seconds the ghost takes to finish
+  const FINISH = 88;      // percent of track width
+  const BOOST = 2.5, DECAY = 2, MAX_SPEED = 16; // speed is in % of track per second
+  let racing = false, start = 0, last = 0, pos = 0, ghostPos = 0, speed = 0, lastKey = null, frame = null;
+
+  function pedal(key) {
+    if (!racing || key === lastKey) return;
+    lastKey = key;
+    speed = Math.min(speed + BOOST, MAX_SPEED);
+  }
+
+  function tick(now) {
+    // Time-based physics so the race feels the same on 60Hz and 120Hz screens
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    const t = (now - start) / 1000;
+    speed *= Math.exp(-DECAY * dt);       // friction
+    pos = Math.min(FINISH, pos + speed * dt);
+    ghostPos = Math.min(FINISH, (t / GHOST_TIME) * FINISH);
+    $("you").style.left = 2 + pos + "%";
+    $("ghost").style.left = 2 + ghostPos + "%";
+    $("speed").style.width = (speed / MAX_SPEED) * 100 + "%";
+    $("bTime").textContent = `Time: ${t.toFixed(2)}s`;
+    if (pos >= FINISH) return end(t);
+    frame = requestAnimationFrame(tick);
+  }
+
+  function end(t) {
+    racing = false;
+    $("bStart").disabled = false;
+    $("bStart").textContent = "Race again";
+    const best = store.get("bikeBest");
+    const isBest = best === null || t < best;
+    if (isBest) store.set("bikeBest", t);
+    const beatGhost = t < GHOST_TIME;
+    $("bMsg").textContent = beatGhost
+      ? `🏁 ${t.toFixed(2)}s — you dropped my ghost! ${isBest ? "New personal best!" : ""}`
+      : `🏁 ${t.toFixed(2)}s — the ghost got you this time. Pedal faster!`;
+    if (beatGhost) confetti(100);
+    renderBest();
+  }
+
+  function renderBest() {
+    const best = store.get("bikeBest");
+    $("bBest").textContent = "Best: " + (best === null ? "–" : best.toFixed(2) + "s");
+  }
+
+  function begin() {
+    cancelAnimationFrame(frame);
+    pos = 0; ghostPos = 0; speed = 0; lastKey = null;
+    $("bStart").disabled = true;
+    let count = 3;
+    $("bMsg").textContent = "Get ready… 3";
+    const id = setInterval(() => {
+      count--;
+      if (count > 0) { $("bMsg").textContent = `Get ready… ${count}`; return; }
+      clearInterval(id);
+      $("bMsg").textContent = "GO GO GO! ←→←→";
+      racing = true;
+      start = last = performance.now();
+      frame = requestAnimationFrame(tick);
+    }, 600);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (!$("bike").classList.contains("active")) return;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      if (!e.repeat) pedal(e.key === "ArrowLeft" ? "L" : "R");
+    }
+  });
+  document.querySelectorAll("[data-pedal]").forEach((b) =>
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); pedal(b.dataset.pedal); }));
+  $("bStart").addEventListener("click", begin);
+  renderBest();
+  return { pedal, get racing() { return racing; } };
+})();
+
+// ---------- JS quiz ----------
+const quiz = (() => {
+  const questions = [
+    { code: "console.log(typeof null)", choices: ['"null"', '"object"', '"undefined"'], answer: 1,
+      why: "A famous bug from JavaScript's first version that can never be fixed without breaking the web." },
+    { code: "console.log(0.1 + 0.2 === 0.3)", choices: ["true", "false"], answer: 1,
+      why: "Floating point! 0.1 + 0.2 is actually 0.30000000000000004." },
+    { code: 'console.log("5" + 3)', choices: ["8", '"53"', "NaN"], answer: 1,
+      why: "With a string involved, + means concatenation, so 3 becomes \"3\"." },
+    { code: 'console.log("5" - 3)', choices: ["2", '"53"', "NaN"], answer: 0,
+      why: "- only works on numbers, so \"5\" is converted to 5 first." },
+    { code: "console.log([1, 2, 3] + [4, 5])", choices: ["[1,2,3,4,5]", '"1,2,34,5"', "Error"], answer: 1,
+      why: "Arrays turn into strings (\"1,2,3\" and \"4,5\") and then get glued together." },
+    { code: "console.log(NaN === NaN)", choices: ["true", "false"], answer: 1,
+      why: "NaN is the only value that isn't equal to itself. Use Number.isNaN() instead." },
+    { code: "let x = 5\nlet y = 3\nlet sum = x + y\nconsole.log(sum)", choices: ["8", '"53"', "undefined"], answer: 0,
+      why: "A classic from my very first JavaScript notes. Sometimes JS just does what you expect! 😄" },
+    { code: "console.log([10, 1, 3].sort())", choices: ["[1, 3, 10]", "[1, 10, 3]", "[10, 3, 1]"], answer: 1,
+      why: "sort() compares items as strings by default, and \"10\" comes before \"3\". Use sort((a, b) => a - b)." },
+  ];
+  let i = 0, score = 0, answered = false, done = false;
+
+  function render() {
+    const q = questions[i];
+    answered = false;
+    $("qProgress").textContent = `Question ${i + 1} / ${questions.length}`;
+    $("qScore").textContent = `Score: ${score}`;
+    $("qCode").textContent = q.code;
+    $("qExplain").textContent = "";
+    $("qNext").disabled = true;
+    $("qNext").textContent = i === questions.length - 1 ? "See results" : "Next →";
+    $("qChoices").innerHTML = "";
+    q.choices.forEach((c, ci) => {
+      const b = document.createElement("button");
+      b.textContent = c;
+      b.addEventListener("click", () => answer(ci));
+      $("qChoices").appendChild(b);
+    });
+  }
+
+  function answer(ci) {
+    if (answered) return;
+    answered = true;
+    const q = questions[i];
+    const buttons = $("qChoices").children;
+    buttons[q.answer].classList.add("right");
+    if (ci === q.answer) { score++; $("qExplain").textContent = "✅ Correct! " + q.why; }
+    else { buttons[ci].classList.add("wrong"); $("qExplain").textContent = "❌ Nope. " + q.why; }
+    $("qScore").textContent = `Score: ${score}`;
+    $("qNext").disabled = false;
+  }
+
+  function next() {
+    if (done) { i = 0; score = 0; done = false; render(); return; }
+    if (i < questions.length - 1) { i++; render(); return; }
+    $("qProgress").textContent = "Done!";
+    $("qCode").textContent = `console.log("You scored ${score} / ${questions.length}")`;
+    $("qChoices").innerHTML = "";
+    $("qExplain").textContent = score === questions.length ? "🏆 Perfect score. You're a JavaScript wizard!"
+      : score >= questions.length / 2 ? "👏 Nice work! JavaScript is weird and you know it."
+      : "😅 JavaScript got you. Don't worry, it gets everyone.";
+    if (score >= questions.length / 2) confetti(120);
+    $("qNext").textContent = "Play again";
+    done = true;
+  }
+  $("qNext").addEventListener("click", next);
+  render();
+  return { answer, next, get score() { return score; } };
+})();
+</script>
+</body>
+</html>
